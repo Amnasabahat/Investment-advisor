@@ -3,4 +3,3 @@ requests
 streamlit
 matplotlib
 seaborn
-lxml
