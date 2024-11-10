@@ -17,36 +17,36 @@ def get_financial_data(stock_symbol):
 
     for key, url in urls.items():
         try:
+            # Set headers to mimic a browser
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
             }
-            
             # Make the request with headers
             response = requests.get(url, headers=headers)
             
-            # Fix: Use header=0 to correctly parse table headers
+            # Read HTML tables (the first table in the response)
             data[key] = pd.read_html(response.text, header=0)[0]  # Read the first table
-
-            # Cleaning the data: Transpose, reset columns, and convert to float
-            data[key] = data[key].T
-            data[key].columns = data[key].iloc[0]
-            data[key] = data[key][1:]
-            data[key] = data[key].astype(float)
-            data[key]['Year'] = ['TTM', '2024', '2023', '2022', '2021', '2020']
+            
+            # Cleaning the data
+            data[key].columns = data[key].columns.droplevel(1)  # Remove multi-level columns
+            data[key] = data[key].T  # Transpose to make the years as rows
+            data[key].columns = data[key].iloc[0]  # Set the first row as column names
+            data[key] = data[key][1:]  # Drop the first row (used as columns now)
+            data[key] = data[key].astype(float)  # Convert all data to float
+            data[key]['Year'] = ['TTM', '2024', '2023', '2022', '2021', '2020']  # Add years
         except Exception as e:
             print(f"Error retrieving data from {url}: {e}")
-            continue
-
+    
     return data
 
 # Function to plot data
 def plot_dataframe(data):
-    # Define the financial metrics you want to plot
+    # Define the financial metrics for each category
     income_metrics = ['Revenue', 'Revenue Growth (YoY) (%)', 'Gross Margin (%)', 'Operating Margin (%)', 'Profit Margin (%)', 'Interest Expense']
     balance_metrics = ['Cash & Equivalents', 'Property, Plant & Equipment', 'Long-Term Debt', 'Retained Earnings', 'Book Value Per Share']
     cash_metrics = ['Free Cash Flow', 'Free Cash Flow Per Share']
     ratio_metrics = ['Debt / Equity Ratio', 'Current Ratio', 'Return on Equity (ROE) (%)', 'Return on Assets (ROA) (%)', 'Return on Capital (ROIC) (%)']
-
+    
     for key, df in data.items():
         st.write(f"Available columns in {key}: {df.columns.tolist()}")
         
